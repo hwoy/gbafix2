@@ -90,12 +90,13 @@ static int showhelp(const char *pname)
 	return 1;
 }
 
-static const char* const opt[] = { "-a:", "-p", "-t:","-c:","-m:","-r:", NULL };
+static const char* const opt[] = { "-a", "-p", "-t:","-c:","-m:","-r:","-o:", NULL };
 static const char* const optstr[] = { "Add header to an output file", "Pad to next exact power of 2. No minimum size",\
 "Patch title. Stripped filename if none given",\
 "Patch game code (four characters)",\
 "Patch maker code (two characters)",\
-"Patch game version (number)", NULL };
+"Patch game version (number)",\
+"Output file (must be assigned)", NULL };
 
 enum {
     opt_a,
@@ -103,7 +104,8 @@ enum {
     opt_t,
 	opt_c,
 	opt_m,
-	opt_r
+	opt_r,
+	opt_o
 };
 
 static unsigned char HeaderComplement(const Header *header)
@@ -146,12 +148,6 @@ int main(int argc, const char *argv[])
             switch (i) {
             case opt_a:
 
-					if(!(fout=fopen(buff, "wb"))) 
-					{ 
-						if(fin) free(fin);
-						return printerr(err_fout,errstr); 
-					}
-
 					isadd = 1;
 
                 	break;
@@ -190,6 +186,16 @@ int main(int argc, const char *argv[])
 					else header.game_version = s2ui(buff);
 
 					memcpy(&addheader.game_version, &header.game_version, sizeof(header.game_version));
+
+					break;
+
+			case opt_o:
+
+					if(!(fout=fopen(buff, "wb"))) 
+					{ 
+						if(fin) free(fin);
+						return printerr(err_fout,errstr); 
+					}
 
 					break;
 
