@@ -183,7 +183,7 @@ int main(int argc, const char *argv[])
 					ismakercode=1;
 
 			case opt_r:
-					if (!*buff) printf("Need value \n") ; 
+					if (!*buff || !isUint(buff)) printf("Need value \n") ; 
 
 					else addheader.game_version = s2ui(buff);
 
@@ -192,13 +192,14 @@ int main(int argc, const char *argv[])
 					break;
 
 			case opt_o:
-
+					if(!fout)
 					fout=fopen(buff, "wb");
 
 					break;
 
             default:
-					fin=fopen(buff, "r+b");
+					if(!fin)
+					fin=fopen(buff, "rb");
 
 					break;
             }
