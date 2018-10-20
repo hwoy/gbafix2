@@ -96,7 +96,7 @@ static const char *croppath(const char *path)
 static int showhelp(const char *pname,const char *opt[],const char *optstr[])
 {
 	size_t i;
-	fprintf(stderr,"\n%s is GameBoy Advance Head Adder\n",pname);
+	fprintf(stderr,"\n%s is a GameBoy Advance Head Builder & Fixer\n",pname);
 	fprintf(stderr,"\nUSAGE:: %s [option] infile\n\n",pname);
 
 	for(i=0;opt[i];++i)
