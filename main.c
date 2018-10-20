@@ -205,7 +205,7 @@ int main(int argc, const char *argv[])
 					break;
 
 			case opt_c:
-					if(strlen(buff)!=4)
+					if(strlen(buff)!=sizeof(addheader.game_code))
 					{
 						if(fin) fclose(fin);
 						if(fout) fclose(fout);
@@ -220,7 +220,7 @@ int main(int argc, const char *argv[])
 					break;
 
 			case opt_m:
-					if(strlen(buff)!=2)
+					if(strlen(buff)!=sizeof(addheader.maker_code))
 					{
 						if(fin) fclose(fin);
 						if(fout) fclose(fout);
@@ -230,6 +230,8 @@ int main(int argc, const char *argv[])
 					addheader.maker_code = buff[0] | buff[1]<<8;
 
 					ismakercode=1;
+
+					break;
 
 			case opt_r:
 					if (!*buff || !isUint(buff))
@@ -288,7 +290,6 @@ int main(int argc, const char *argv[])
 
 		return printerr(err_fout,errstr); 
 	}
-
 
 	fread(&header, sizeof(header), 1, fin);
 	rewind(fin);
