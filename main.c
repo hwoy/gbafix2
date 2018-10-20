@@ -128,7 +128,7 @@ int main(int argc, const char *argv[])
 
 	FILE *fin=NULL,*fout=NULL;
 
-	int isadd=0,ispadding=0;
+	int isadd=0,ispadding=0,istitle=0,isgamecode=0,ismakercode=0,isversion=0;
 
 	if(argc==1)
 	{
@@ -161,60 +161,74 @@ int main(int argc, const char *argv[])
 
 			case opt_t:
 					if(*buff)
-						memcpy(header.title, buff, sizeof(header.title));
+						memcpy(addheader.title, buff, sizeof(addheader.title));
 					else
-						memset(header.title, 0, sizeof(header.title));
-					
-					memcpy(addheader.title, header.title, sizeof(header.title));
+						memset(addheader.title, 0, sizeof(addheader.title));
+				
+
+					istitle=1;
 
 					break;
 
 			case opt_c:
-					header.game_code = buff[0] | buff[1]<<8 | buff[2]<<16 | buff[3]<<24;
+					addheader.game_code = buff[0] | buff[1]<<8 | buff[2]<<16 | buff[3]<<24;
 
-					memcpy(&addheader.game_code, &header.game_code, sizeof(header.game_code));
+					isgamecode=1;
 
 					break;
 
 			case opt_m:
-					header.maker_code = buff[0] | buff[1]<<8;
+					addheader.maker_code = buff[0] | buff[1]<<8;
 
-					memcpy(&addheader.maker_code, &header.maker_code, sizeof(header.maker_code));
+					ismakercode=1;
 
 			case opt_r:
 					if (!*buff) printf("Need value \n") ; 
 
-					else header.game_version = s2ui(buff);
+					else addheader.game_version = s2ui(buff);
 
-					memcpy(&addheader.game_version, &header.game_version, sizeof(header.game_version));
+					isversion=1;
 
 					break;
 
 			case opt_o:
 
-					if(!(fout=fopen(buff, "wb"))) 
-					{ 
-						if(fin) free(fin);
-						return printerr(err_fout,errstr); 
-					}
+					fout=fopen(buff, "wb");
 
 					break;
 
             default:
-					if(!(fin=fopen(buff, "r+b"))) 
-					{
-						if(fout) free(fout);
-						return printerr(err_fin,errstr);
-					}
-
-					fread(&header, sizeof(header), 1, fin);
-					rewind(fin);
-
+					fin=fopen(buff, "r+b");
 
 					break;
             }
         }
     }
+
+	if(!fout) 
+	{ 
+		if(fin) free(fin);
+
+		return printerr(err_fout,errstr); 
+	}
+
+	if(!fin) 
+	{
+		if(fout) free(fout);
+
+		return printerr(err_fin,errstr);
+	}
+
+	fread(&header, sizeof(header), 1, fin);
+	rewind(fin);
+
+	if(istitle) memcpy(header.title,addheader.title,sizeof(header.title));
+
+	if(isgamecode) memcpy(&header.game_code,&addheader.game_code,sizeof(header.game_code));
+
+	if(ismakercode) memcpy(&header.maker_code,&addheader.maker_code,sizeof(header.maker_code));
+
+	if(isversion) memcpy(&header.game_version,&addheader.game_version,sizeof(header.game_version));
 
 	if(isadd)
 	{
@@ -237,6 +251,8 @@ int main(int argc, const char *argv[])
 		fwrite(&header, sizeof(header), 1, fout);
 
 		msg="Header fixed!";
+
+		fseek(fin,sizeof(header),SEEK_CUR);
 	}
 
 	{
