@@ -119,6 +119,7 @@ static unsigned char HeaderComplement(const Header *header)
 int main(int argc, const char *argv[])
 {
 	static Header header;
+	static Header addheader=good_header;
 	static char buff[BSIZE];
 
 	FILE *fin=NULL,*fout=NULL;
@@ -161,21 +162,29 @@ int main(int argc, const char *argv[])
 						memcpy(header.title, buff, sizeof(header.title));
 					else
 						memset(header.title, 0, sizeof(header.title));
+					
+					memcpy(addheader.title, header.title, sizeof(header.title));
 
 					break;
 
 			case opt_c:
 					header.game_code = buff[0] | buff[1]<<8 | buff[2]<<16 | buff[3]<<24;
 
+					memcpy(&addheader.game_code, &header.game_code, sizeof(header.game_code));
+
 					break;
 
 			case opt_m:
 					header.maker_code = buff[0] | buff[1]<<8;
 
+					memcpy(&addheader.maker_code, &header.maker_code, sizeof(header.maker_code));
+
 			case opt_r:
 					if (!*buff) printf("Need value \n") ; 
 
 					else header.game_version = s2ui(buff);
+
+					memcpy(&addheader.game_version, &header.game_version, sizeof(header.game_version));
 
 					break;
 
@@ -213,17 +222,24 @@ int main(int argc, const char *argv[])
 
 	if(isadd)
 	{
-		header=good_header;
-	
-		header.complement = HeaderComplement(&header);
+		addheader.complement = HeaderComplement(&addheader);
 		
-		fwrite(&header, sizeof(header), 1, fout);
+		fwrite(&addheader, sizeof(addheader), 1, fout);
 
 		{
 			int ch;
 			while((ch=fgetc(fin))!=EOF)
 			fputc(ch,fout);
 		}
+
+		fseek(fin, 0, SEEK_SET);
+		fseek(fout, 0, SEEK_SET);
+
+		{
+			int ch;
+			while((ch=fgetc(fout))!=EOF)
+			fputc(ch,fin);
+		}	
 
 		printf("Header ROM Added!\n");
 	}
