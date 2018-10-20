@@ -148,10 +148,10 @@ static void filepadding(FILE *fout,int padval)
 
 	size = ftell(fout);
 
-	for (bit=31; bit>=0; bit--) if (size & (1<<bit)) break;
-	if (size != (1<<bit))
+	for (bit=32; bit>=1; bit--) if (size & (1<<(bit-1))) break;
+	if (size != (1U<<(bit-1)))
 	{
-		size_t todo = (1<<(bit+1)) - size;
+		size_t todo = (1U<<bit) - size;
 		while (todo--) fputc(padval, fout);
 	}
 }
