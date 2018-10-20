@@ -1,7 +1,10 @@
 
 #include <stdio.h>
+#include <string.h>
 #include "function.h"
 #include "opt.h"
+
+#define BSIZE 512
 
 typedef struct
 {
@@ -20,7 +23,7 @@ typedef struct
 } Header;
 
 
-static Header header = {
+static const Header good_header = {
 	/* start_code */
 	0xEA00002E,\
 	/* logo */
@@ -86,6 +89,22 @@ static int showhelp(const char *pname)
 	return 1;
 }
 
+static const char* const opt[] = { "-a:", "-p", "-t:","-c:","-m:","-r:", NULL };
+static const char* const optstr[] = { "Add header", "Pad to next exact power of 2. No minimum size",\
+"Patch title. Stripped filename if none given",\
+"Patch game code (four characters)",\
+"Patch maker code (two characters)",\
+"Patch game version (number)", NULL };
+
+enum {
+    opt_a,
+    opt_p,
+    opt_t,
+	opt_c,
+	opt_m,
+	opt_r
+};
+
 static unsigned char HeaderComplement(const Header *header)
 {
 	unsigned char c = 0;
@@ -99,11 +118,14 @@ static unsigned char HeaderComplement(const Header *header)
 
 int main(int argc, const char *argv[])
 {
-	int ch;
-	FILE *fin;
-	FILE *fout;
+	static Header header;
+	static char buff[BSIZE];
 
-	if(argc !=3)
+	FILE *fin=NULL,*fout=NULL;
+
+	int isadd=0,ispadding=0;
+
+	if(argc==1)
 	{
 		printerr(err_param,errstr);
 		return showhelp(croppath(argv[0]));
@@ -113,16 +135,112 @@ int main(int argc, const char *argv[])
 
 	if(!(fout=fopen(argv[2], "wb"))) { fclose(fin); return printerr(err_fout,errstr); }
 
-	
-	header.complement = HeaderComplement(&header);
-	
-	fwrite(&header, sizeof(header), 1, fout);
 
-	while((ch=fgetc(fin))!=EOF)
-		fputc(ch,fout);
+  {
+        int i;
+        unsigned int ui_cindex;
 
-	fclose(fout);
+        for (ui_cindex = DSTART; (i = opt_action(argc, argv, opt, buff,
+                                      BSIZE, DSTART))
+             != e_optend;
+             ui_cindex++) {
+
+            switch (i) {
+            case opt_a:
+				isadd = 1;
+
+                break;
+
+            case opt_p:
+				ispadding =0;
+
+                break;
+
+			case opt_t:
+					if(*buff)
+						memcpy(header.title, buff, sizeof(header.title));
+					else
+						memset(header.title, 0, sizeof(header.title));
+
+					break;
+
+			case opt_c:
+					header.game_code = buff[0] | buff[1]<<8 | buff[2]<<16 | buff[3]<<24;
+
+					break;
+
+			case opt_m:
+					header.maker_code = buff[0] | buff[1]<<8;
+
+			case opt_r:
+					if (!*buff) printf("Need value \n") ; 
+
+					else header.game_version = s2ui(buff);
+
+					break;
+
+
+            default:
+				if(!(fin=fopen(buff, "r+b"))) return printerr(err_fin,errstr);
+				if(!(fout=tmpfile())) { fclose(fin); return printerr(err_fout,errstr); }
+
+				fseek(fin, 0, SEEK_SET);
+				fread(&header, sizeof(header), 1, fin);
+
+				break;
+            }
+        }
+    }
+
+	if(ispadding)
+	{
+		long size ;
+		int bit;
+
+		fseek(fin, 0, SEEK_END);
+		size = ftell(fin);
+
+		for (bit=31; bit>=0; bit--) if (size & (1<<bit)) break;
+		if (size != (1<<bit))
+			{
+				int todo = (1<<(bit+1)) - size;
+					while (todo--) fputc(0xFF, fin);
+			}
+			fseek(fin, 0, SEEK_SET);		
+	}
+
+	if(isadd)
+	{
+		header=good_header;
+	
+		header.complement = HeaderComplement(&header);
+		
+		fwrite(&header, sizeof(header), 1, fout);
+
+		{
+			int ch;
+			while((ch=fgetc(fin))!=EOF)
+			fputc(ch,fout);
+		}
+
+
+	}
+	else
+	{
+		memcpy(header.logo, good_header.logo, sizeof(header.logo));
+		memcpy(&header.fixed, &good_header.fixed, sizeof(header.fixed));
+		memcpy(&header.device_type, &good_header.device_type, sizeof(header.device_type));
+			
+		header.complement = 0;
+		header.checksum = 0;
+		header.complement = HeaderComplement(&header);
+
+		fseek(fin, 0, SEEK_SET);
+		fwrite(&header, sizeof(header), 1, fin);
+	}
+
 	fclose(fin);
+	fclose(fout);
 	
 	printf("Header ROM Added!\n");
 
