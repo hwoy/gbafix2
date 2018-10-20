@@ -90,8 +90,8 @@ static int showhelp(const char *pname)
 	return 1;
 }
 
-static const char* const opt[] = { "-a", "-p", "-t:","-c:","-m:","-r:", NULL };
-static const char* const optstr[] = { "Add header", "Pad to next exact power of 2. No minimum size",\
+static const char* const opt[] = { "-a:", "-p", "-t:","-c:","-m:","-r:", NULL };
+static const char* const optstr[] = { "Add header to an output file", "Pad to next exact power of 2. No minimum size",\
 "Patch title. Stripped filename if none given",\
 "Patch game code (four characters)",\
 "Patch maker code (two characters)",\
@@ -145,14 +145,22 @@ int main(int argc, const char *argv[])
 
             switch (i) {
             case opt_a:
-				isadd = 1;
 
-                break;
+					if(!(fout=fopen(buff, "wb"))) 
+					{ 
+						if(fin) free(fin);
+						return printerr(err_fout,errstr); 
+					}
+
+					isadd = 1;
+
+                	break;
 
             case opt_p:
-				ispadding =1;
 
-                break;
+					ispadding =1;
+
+                	break;
 
 			case opt_t:
 					if(*buff)
@@ -185,22 +193,18 @@ int main(int argc, const char *argv[])
 
 					break;
 
-
             default:
-				if(!(fin=fopen(buff, "r+b"))) return printerr(err_fin,errstr);
+					if(!(fin=fopen(buff, "r+b"))) 
+					{
+						if(fout) free(fout);
+						return printerr(err_fin,errstr);
+					}
 
-				{
-					char *tmp = malloc(strlen(buff)+strlen(".tmp")+2);
-					strcpy(tmp,buff);
-					strcat(tmp,".tmp");
-					if(!(fout=fopen(tmp, "w+b"))) { free(tmp); fclose(fin); return printerr(err_fout,errstr); }
-					free(tmp);
-				}
+					fread(&header, sizeof(header), 1, fin);
+					rewind(fin);
 
-				fread(&header, sizeof(header), 1, fin);
-				rewind(fin);
 
-				break;
+					break;
             }
         }
     }
@@ -219,6 +223,7 @@ int main(int argc, const char *argv[])
 				int todo = (1<<(bit+1)) - size;
 					while (todo--) fputc(0xFF, fin);
 			}
+
 		rewind(fin);
 
 		printf("Header ROM padded!\n");		
@@ -235,15 +240,6 @@ int main(int argc, const char *argv[])
 			while((ch=fgetc(fin))!=EOF)
 			fputc(ch,fout);
 		}
-
-		rewind(fin);
-		rewind(fout);
-
-		{
-			int ch;
-			while((ch=fgetc(fout))!=EOF)
-			fputc(ch,fin);
-		}	
 
 		printf("Header ROM Added!\n");
 	}
