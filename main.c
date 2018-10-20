@@ -249,15 +249,15 @@ int main(int argc, const char *argv[])
 
 	if(ispadding)
 	{
-		long size ;
-		int bit;
+		size_t size ;
+		size_t bit;
 
 		size = ftell(fout);
 
 		for (bit=31; bit>=0; bit--) if (size & (1<<bit)) break;
 		if (size != (1<<bit))
 			{
-				int todo = (1<<(bit+1)) - size;
+				size_t todo = (1<<(bit+1)) - size;
 					while (todo--) fputc(0xFF, fout);
 			}
 

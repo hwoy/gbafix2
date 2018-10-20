@@ -1,8 +1,8 @@
 CC=gcc
 
-BIN=gba2
+BIN=gbafix2
 
-CFLAGS=-O2 -std=c90 -pedantic -Wall
+CFLAGS=-O2 -ansi -pedantic -Wall
 
 
 
