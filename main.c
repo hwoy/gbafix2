@@ -1,7 +1,5 @@
-
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include "function.h"
 #include "opt.h"
 
@@ -61,12 +59,24 @@ static const Header good_header = {
 };
 
 enum Error{
-	err_param,
 	err_fin,
-	err_fout
+	err_fout,
+	err_gamecode,
+	err_makercode,
+	err_version,
+	err_dfout,
+	err_dfin
 };
 
-static const char *errstr[]={"Number of Param must be 2","can not access Input File","can not access Output File",NULL};
+static const char *errstr[]={
+"can not access Input File",\
+"can not access Output File",\
+"size of game code",\
+"size of maker code",\
+"game version",\
+"double output file",\
+"double input file",\
+NULL};
 
 
 static int printerr(int id,const char **errstr)
@@ -83,15 +93,20 @@ static const char *croppath(const char *path)
 	return cpath;
 }
 
-static int showhelp(const char *pname)
+static int showhelp(const char *pname,const char *opt[],const char *optstr[])
 {
+	size_t i;
 	fprintf(stderr,"\n%s is GameBoy Advance Head Adder\n",pname);
-	fprintf(stderr,"\nUSAGE:: %s infile outfile\n",pname);
+	fprintf(stderr,"\nUSAGE:: %s [option] infile\n\n",pname);
+
+	for(i=0;opt[i];++i)
+		fprintf(stderr,"%s\t => %s\n",opt[i],optstr[i]);
+
 	return 1;
 }
 
-static const char* const opt[] = { "-a", "-p", "-t:","-c:","-m:","-r:","-o:", NULL };
-static const char* const optstr[] = { "Add header to an output file", "Pad to next exact power of 2. No minimum size",\
+static const char* opt[] = { "-g","-a", "-p", "-t:","-c:","-m:","-r:","-o:", NULL };
+static const char* optstr[] = { "Replaced by good header","Add header to an output file", "Pad to next exact power of 2. No minimum size",\
 "Patch title. Stripped filename if none given",\
 "Patch game code (four characters)",\
 "Patch maker code (two characters)",\
@@ -99,6 +114,7 @@ static const char* const optstr[] = { "Add header to an output file", "Pad to ne
 "Output file (must be assigned)", NULL };
 
 enum {
+	opt_g,
     opt_a,
     opt_p,
     opt_t,
@@ -119,6 +135,21 @@ static unsigned char HeaderComplement(const Header *header)
 	return -(0x19+c);
 }
 
+static void filepadding(FILE *fout,int padval)
+{
+	size_t size ;
+	size_t bit;
+
+	size = ftell(fout);
+
+	for (bit=31; bit>=0; bit--) if (size & (1<<bit)) break;
+	if (size != (1<<bit))
+	{
+		size_t todo = (1<<(bit+1)) - size;
+		while (todo--) fputc(padval, fout);
+	}
+}
+
 int main(int argc, const char *argv[])
 {
 	static Header header;
@@ -128,14 +159,10 @@ int main(int argc, const char *argv[])
 
 	FILE *fin=NULL,*fout=NULL;
 
-	int isadd=0,ispadding=0,istitle=0,isgamecode=0,ismakercode=0,isversion=0;
+	int isgood=0,isadd=0,ispadding=0,istitle=0,isgamecode=0,ismakercode=0,isversion=0;
 
 	if(argc==1)
-	{
-		printerr(err_param,errstr);
-		return showhelp(croppath(argv[0]));
-	}
-
+		return showhelp(croppath(argv[0]),opt,optstr);
 
   {
         int i;
@@ -147,6 +174,13 @@ int main(int argc, const char *argv[])
              ui_cindex++) {
 
             switch (i) {
+
+            case opt_g:
+
+					isgood = 1;
+
+                	break;
+
             case opt_a:
 
 					isadd = 1;
@@ -171,6 +205,14 @@ int main(int argc, const char *argv[])
 					break;
 
 			case opt_c:
+					if(strlen(buff)!=4)
+					{
+						if(fin) fclose(fin);
+						if(fout) fclose(fout);
+
+						return printerr(err_gamecode,errstr);
+					}
+
 					addheader.game_code = buff[0] | buff[1]<<8 | buff[2]<<16 | buff[3]<<24;
 
 					isgamecode=1;
@@ -178,27 +220,54 @@ int main(int argc, const char *argv[])
 					break;
 
 			case opt_m:
+					if(strlen(buff)!=2)
+					{
+						if(fin) fclose(fin);
+						if(fout) fclose(fout);
+
+						return printerr(err_makercode,errstr);
+					}
 					addheader.maker_code = buff[0] | buff[1]<<8;
 
 					ismakercode=1;
 
 			case opt_r:
-					if (!*buff || !isUint(buff)) printf("Need value \n") ; 
+					if (!*buff || !isUint(buff))
+					{
+						if(fin) fclose(fin);
+						if(fout) fclose(fout);
 
-					else addheader.game_version = s2ui(buff);
+						return printerr(err_version,errstr);
+					}
+
+					addheader.game_version = s2ui(buff);
 
 					isversion=1;
 
 					break;
 
 			case opt_o:
-					if(!fout)
+					if(fout)
+					{
+						if(fin) fclose(fin);
+						if(fout) fclose(fout);
+
+						return printerr(err_dfout,errstr);
+					}
+
 					fout=fopen(buff, "wb");
 
 					break;
 
             default:
-					if(!fin)
+					if(fin)
+					{
+						if(fin) fclose(fin);
+						if(fout) fclose(fout);
+
+						return printerr(err_dfin,errstr);
+					}
+
 					fin=fopen(buff, "rb");
 
 					break;
@@ -208,14 +277,14 @@ int main(int argc, const char *argv[])
 
 	if(!fout) 
 	{ 
-		if(fin) free(fin);
+		if(fin) fclose(fin);
 
 		return printerr(err_fout,errstr); 
 	}
 
 	if(!fin) 
 	{
-		if(fout) free(fout);
+		if(fout) fclose(fout);
 
 		return printerr(err_fin,errstr);
 	}
@@ -231,7 +300,19 @@ int main(int argc, const char *argv[])
 
 	if(isversion) memcpy(&header.game_version,&addheader.game_version,sizeof(header.game_version));
 
-	if(isadd)
+	if(isgood)
+	{
+		addheader = good_header;
+		addheader.complement = HeaderComplement(&addheader);
+		
+		fwrite(&addheader, sizeof(addheader), 1, fout);
+
+		msg="Header ROM Replaced by good one!";
+
+		fseek(fin,sizeof(header),SEEK_CUR);
+
+	}
+	else if(isadd)
 	{
 		addheader.complement = HeaderComplement(&addheader);
 		
@@ -251,7 +332,7 @@ int main(int argc, const char *argv[])
 
 		fwrite(&header, sizeof(header), 1, fout);
 
-		msg="Header fixed!";
+		msg="Header ROM fixed!";
 
 		fseek(fin,sizeof(header),SEEK_CUR);
 	}
@@ -266,17 +347,7 @@ int main(int argc, const char *argv[])
 
 	if(ispadding)
 	{
-		size_t size ;
-		size_t bit;
-
-		size = ftell(fout);
-
-		for (bit=31; bit>=0; bit--) if (size & (1<<bit)) break;
-		if (size != (1<<bit))
-			{
-				size_t todo = (1<<(bit+1)) - size;
-					while (todo--) fputc(0xFF, fout);
-			}
+		filepadding(fout,0xFF);
 
 		puts("Header ROM padded!");		
 	}
