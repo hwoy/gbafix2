@@ -206,7 +206,9 @@ int main(int argc, const char *argv[])
 				int todo = (1<<(bit+1)) - size;
 					while (todo--) fputc(0xFF, fin);
 			}
-			fseek(fin, 0, SEEK_SET);		
+		fseek(fin, 0, SEEK_SET);
+
+		printf("Header ROM padded!\n");		
 	}
 
 	if(isadd)
@@ -223,7 +225,7 @@ int main(int argc, const char *argv[])
 			fputc(ch,fout);
 		}
 
-
+		printf("Header ROM Added!\n");
 	}
 	else
 	{
@@ -237,12 +239,12 @@ int main(int argc, const char *argv[])
 
 		fseek(fin, 0, SEEK_SET);
 		fwrite(&header, sizeof(header), 1, fin);
+
+		printf("Header fixed!\n");
 	}
 
 	fclose(fin);
 	fclose(fout);
-	
-	printf("Header ROM Added!\n");
 
 	return 0;
 }
