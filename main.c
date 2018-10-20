@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "function.h"
 #include "opt.h"
 
@@ -89,7 +90,7 @@ static int showhelp(const char *pname)
 	return 1;
 }
 
-static const char* const opt[] = { "-a:", "-p", "-t:","-c:","-m:","-r:", NULL };
+static const char* const opt[] = { "-a", "-p", "-t:","-c:","-m:","-r:", NULL };
 static const char* const optstr[] = { "Add header", "Pad to next exact power of 2. No minimum size",\
 "Patch title. Stripped filename if none given",\
 "Patch game code (four characters)",\
@@ -132,10 +133,6 @@ int main(int argc, const char *argv[])
 		return showhelp(croppath(argv[0]));
 	}
 
-	if(!(fin=fopen(argv[1], "rb"))) return printerr(err_fin,errstr);
-
-	if(!(fout=fopen(argv[2], "wb"))) { fclose(fin); return printerr(err_fout,errstr); }
-
 
   {
         int i;
@@ -153,7 +150,7 @@ int main(int argc, const char *argv[])
                 break;
 
             case opt_p:
-				ispadding =0;
+				ispadding =1;
 
                 break;
 
@@ -191,10 +188,17 @@ int main(int argc, const char *argv[])
 
             default:
 				if(!(fin=fopen(buff, "r+b"))) return printerr(err_fin,errstr);
-				if(!(fout=tmpfile())) { fclose(fin); return printerr(err_fout,errstr); }
 
-				fseek(fin, 0, SEEK_SET);
+				{
+					char *tmp = malloc(strlen(buff)+strlen(".tmp")+2);
+					strcpy(tmp,buff);
+					strcat(tmp,".tmp");
+					if(!(fout=fopen(tmp, "w+b"))) { free(tmp); fclose(fin); return printerr(err_fout,errstr); }
+					free(tmp);
+				}
+
 				fread(&header, sizeof(header), 1, fin);
+				rewind(fin);
 
 				break;
             }
@@ -215,7 +219,7 @@ int main(int argc, const char *argv[])
 				int todo = (1<<(bit+1)) - size;
 					while (todo--) fputc(0xFF, fin);
 			}
-		fseek(fin, 0, SEEK_SET);
+		rewind(fin);
 
 		printf("Header ROM padded!\n");		
 	}
@@ -232,8 +236,8 @@ int main(int argc, const char *argv[])
 			fputc(ch,fout);
 		}
 
-		fseek(fin, 0, SEEK_SET);
-		fseek(fout, 0, SEEK_SET);
+		rewind(fin);
+		rewind(fout);
 
 		{
 			int ch;
