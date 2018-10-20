@@ -107,7 +107,7 @@ static int showhelp(const char *pname,const char *opt[],const char *optstr[])
 
 static const char* opt[] = { "-g","-a", "-p", "-t:","-c:","-m:","-r:","-o:", NULL };
 static const char* optstr[] = { "Replaced by good header","Add header to an output file", "Pad to next exact power of 2. No minimum size",\
-"Patch title. Stripped filename if none given",\
+"Patch title. Fill zero if none given",\
 "Patch game code (four characters)",\
 "Patch maker code (two characters)",\
 "Patch game version (number)",\
@@ -275,6 +275,13 @@ int main(int argc, const char *argv[])
         }
     }
 
+	if(!fin) 
+	{
+		if(fout) fclose(fout);
+
+		return printerr(err_fin,errstr);
+	}
+
 	if(!fout) 
 	{ 
 		if(fin) fclose(fin);
@@ -282,12 +289,6 @@ int main(int argc, const char *argv[])
 		return printerr(err_fout,errstr); 
 	}
 
-	if(!fin) 
-	{
-		if(fout) fclose(fout);
-
-		return printerr(err_fin,errstr);
-	}
 
 	fread(&header, sizeof(header), 1, fin);
 	rewind(fin);
