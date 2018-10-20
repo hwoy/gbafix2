@@ -124,6 +124,7 @@ int main(int argc, const char *argv[])
 	static Header header;
 	static Header addheader=good_header;
 	static char buff[BSIZE];
+	const char *msg;
 
 	FILE *fin=NULL,*fout=NULL;
 
@@ -215,39 +216,13 @@ int main(int argc, const char *argv[])
         }
     }
 
-	if(ispadding)
-	{
-		long size ;
-		int bit;
-
-		fseek(fin, 0, SEEK_END);
-		size = ftell(fin);
-
-		for (bit=31; bit>=0; bit--) if (size & (1<<bit)) break;
-		if (size != (1<<bit))
-			{
-				int todo = (1<<(bit+1)) - size;
-					while (todo--) fputc(0xFF, fin);
-			}
-
-		rewind(fin);
-
-		printf("Header ROM padded!\n");		
-	}
-
 	if(isadd)
 	{
 		addheader.complement = HeaderComplement(&addheader);
 		
 		fwrite(&addheader, sizeof(addheader), 1, fout);
 
-		{
-			int ch;
-			while((ch=fgetc(fin))!=EOF)
-			fputc(ch,fout);
-		}
-
-		printf("Header ROM Added!\n");
+		msg="Header ROM Added!";
 	}
 	else
 	{
@@ -259,10 +234,34 @@ int main(int argc, const char *argv[])
 		header.checksum = 0;
 		header.complement = HeaderComplement(&header);
 
-		fseek(fin, 0, SEEK_SET);
-		fwrite(&header, sizeof(header), 1, fin);
+		fwrite(&header, sizeof(header), 1, fout);
 
-		printf("Header fixed!\n");
+		msg="Header fixed!";
+	}
+
+	{
+		int ch;
+		while((ch=fgetc(fin))!=EOF)
+		fputc(ch,fout);
+	}
+
+	puts(msg);
+
+	if(ispadding)
+	{
+		long size ;
+		int bit;
+
+		size = ftell(fout);
+
+		for (bit=31; bit>=0; bit--) if (size & (1<<bit)) break;
+		if (size != (1<<bit))
+			{
+				int todo = (1<<(bit+1)) - size;
+					while (todo--) fputc(0xFF, fout);
+			}
+
+		puts("Header ROM padded!");		
 	}
 
 	fclose(fin);
