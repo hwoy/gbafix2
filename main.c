@@ -67,7 +67,8 @@ enum Error{
 	err_dfout,
 	err_dfin,
 	err_debug,
-	err_hfile
+	err_hfile,
+	err_fread
 };
 
 static const char *errstr[]={
@@ -80,6 +81,7 @@ static const char *errstr[]={
 "double input file",\
 "Debug entry point",\
 "can not access header file",\
+"Less byte length of file",\
 NULL};
 
 
@@ -222,7 +224,7 @@ int main(int argc, const char *argv[])
             case opt_l:
 			{
 					FILE *hfile=fopen(buff,"rb");
-					if(hfile)
+					if(!hfile)
 					{
 						if(fin) fclose(fin);
 						if(fout) fclose(fout);
@@ -230,7 +232,15 @@ int main(int argc, const char *argv[])
 						return printerr(err_hfile,errstr);
 					}
 
-					fread(&linkheader, sizeof(linkheader), 1, hfile);
+					if(fread(&linkheader, sizeof(linkheader), 1, hfile)<1)
+					{
+						fclose(hfile);
+						if(fin) fclose(fin);
+						if(fout) fclose(fout);
+
+						return printerr(err_fread,errstr);
+
+					}
 
 					fclose(hfile);
 			}
@@ -395,6 +405,15 @@ int main(int argc, const char *argv[])
 	{
 		const size_t s= fread(&header, sizeof(header), 1, fin);
 
+		if(s<1)
+		{
+			if(fin) fclose(fin);
+			if(fout) fclose(fout);
+
+			return printerr(err_fread,errstr);
+
+		}
+
 		fwrite(&header, sizeof(header), s, fout);
 
 		puts("Header ROM Copied!");
@@ -424,6 +443,16 @@ int main(int argc, const char *argv[])
 	else
 	{
 		const size_t s = fread(&header, sizeof(header), 1, fin);
+		
+		if(s<1)
+		{
+			if(fin) fclose(fin);
+			if(fout) fclose(fout);
+
+			return printerr(err_fread,errstr);
+
+		}
+
 		rewind(fin);
 
 		memcpy(header.logo, good_header.logo, sizeof(header.logo));
