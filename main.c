@@ -155,14 +155,16 @@ static unsigned char HeaderComplement(const Header *header)
 static void filepadding(FILE *fout,int padval)
 {
 	size_t size ;
-	size_t bit;
+	unsigned int bit;
+
+	const size_t one=1;
 
 	size = ftell(fout);
 
-	for (bit=32; bit>=1; bit--) if (size & (1<<(bit-1))) break;
-	if (size != (1U<<(bit-1)))
+	for (bit=32; bit>=1; bit--) if (size & (one<<(bit-1))) break;
+	if (size != (one<<(bit-1)))
 	{
-		size_t todo = (1U<<bit) - size;
+		size_t todo = (one<<bit) - size;
 		while (todo--) fputc(padval, fout);
 	}
 }
