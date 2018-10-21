@@ -169,11 +169,12 @@ static void filepadding(FILE *fout,int padval)
 
 int main(int argc, const char *argv[])
 {
-	static Header header;
 	static Header addheader=good_header;
-	static Header linkheader;
-
 	static char buff[BSIZE];
+
+	Header header;
+	Header linkheader;
+	
 	const char *msg;
 
 	FILE *fin=NULL,*fout=NULL;
