@@ -459,8 +459,6 @@ int main(int argc, const char *argv[])
 
 		}
 
-		rewind(fin);
-
 		memcpy(header.logo, good_header.logo, sizeof(header.logo));
 		memcpy(&header.fixed, &good_header.fixed, sizeof(header.fixed));
 		header.device_type=good_header.device_type;
