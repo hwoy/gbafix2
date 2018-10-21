@@ -174,10 +174,10 @@ int main(int argc, const char *argv[])
 
 	Header header;
 	Header linkheader;
-	
-	const char *msg;
 
 	FILE *fin=NULL,*fout=NULL;
+
+	const char *msg;
 
 	int isgood=0,isadd=0,isremove=0,iscopy=0,islink=0,ispadding=0,ispadonly=0,istitle=0,isgamecode=0,ismakercode=0,isversion=0,isdebug=0;
 
