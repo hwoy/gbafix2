@@ -19,23 +19,19 @@ gbafix2 is a ROM GameBoy Advance Head Builder & Fixer
 
 USAGE:: gbafix2 [option] infile
 
-gbafix2 is a ROM GameBoy Advance Head Builder & Fixer
-
-USAGE:: gbafix2 [option] infile
-
--g	 => Replaced by good header
--a	 => Add header to an output file
--R	 => Remove header
--C	 => Copy header (NO Patch)
--l:	 => Concat header and file (NO Patch)
+-g	 => Replaced by good header (No patch)
+-a	 => Add a header to an output file
+-R	 => Remove header (No patch, No Padding)
+-C	 => Copy header (No Padding)
+-l:	 => Concat header and file
 -p	 => Pad to next exact power of 2. No minimum size
--P	 => Pad only and exit
+-P	 => Pad only and exit (No patch)
 -t:	 => Patch title. Fill zero if none given
 -c:	 => Patch game code (four characters)
 -m:	 => Patch maker code (two characters)
 -r:	 => Patch game version (number)
 -o:	 => Output file (must be assigned)
--d:	 => Degug enabled (0 or 1)
+-d:	 => Patch Degug enabled (0 or 1)
 
 
 ```
