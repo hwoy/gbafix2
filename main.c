@@ -66,7 +66,8 @@ enum Error{
 	err_version,
 	err_dfout,
 	err_dfin,
-	err_debug
+	err_debug,
+	err_hfile
 };
 
 static const char *errstr[]={
@@ -78,6 +79,7 @@ static const char *errstr[]={
 "double output file",\
 "double input file",\
 "Debug entry point",\
+"can not access header file",\
 NULL};
 
 
@@ -107,9 +109,13 @@ static int showhelp(const char *pname,const char *opt[],const char *optstr[])
 	return 1;
 }
 
-static const char* opt[] = { "-g","-a", "-p","-P", "-t:","-c:","-m:","-r:","-o:","-d:", NULL };
+static const char* opt[] = { "-g","-a","-R","-C","-l:","-p","-P", "-t:","-c:","-m:","-r:","-o:","-d:", NULL };
 static const char* optstr[] = { 
-"Replaced by good header","Add header to an output file",\
+"Replaced by good header",\
+"Add header to an output file",\
+"Remove header",\
+"Copy header",\
+"concat header and file",\
 "Pad to next exact power of 2. No minimum size",\
 "Pad only and exit",\
 "Patch title. Fill zero if none given",\
@@ -122,6 +128,9 @@ static const char* optstr[] = {
 enum {
 	opt_g,
     opt_a,
+	opt_R,
+	opt_C,
+	opt_l,
     opt_p,
 	opt_P,
     opt_t,
@@ -162,12 +171,14 @@ int main(int argc, const char *argv[])
 {
 	static Header header;
 	static Header addheader=good_header;
+	static Header linkheader;
+
 	static char buff[BSIZE];
 	const char *msg;
 
 	FILE *fin=NULL,*fout=NULL;
 
-	int isgood=0,isadd=0,ispadding=0,ispadonly=0,istitle=0,isgamecode=0,ismakercode=0,isversion=0,isdebug=0;
+	int isgood=0,isadd=0,isremove=0,iscopy=0,islink=0,ispadding=0,ispadonly=0,istitle=0,isgamecode=0,ismakercode=0,isversion=0,isdebug=0;
 
 	if(argc==1)
 		return showhelp(croppath(argv[0]),opt,optstr);
@@ -192,6 +203,37 @@ int main(int argc, const char *argv[])
             case opt_a:
 
 					isadd = 1;
+
+                	break;
+
+            case opt_R:
+
+					isremove = 1;
+
+                	break;
+
+            case opt_C:
+
+					iscopy = 1;
+
+                	break;
+
+            case opt_l:
+			{
+					FILE *hfile=fopen(buff,"rb");
+					if(hfile)
+					{
+						if(fin) fclose(fin);
+						if(fout) fclose(fout);
+
+						return printerr(err_hfile,errstr);
+					}
+
+					fread(&linkheader, sizeof(linkheader), 1, hfile);
+
+					fclose(hfile);
+			}
+					islink = 1;
 
                 	break;
 
@@ -320,19 +362,16 @@ int main(int argc, const char *argv[])
 		return printerr(err_fout,errstr); 
 	}
 
-	fread(&header, sizeof(header), 1, fin);
-	rewind(fin);
-
 	if(isgood)
 	{
-		static Header replaceheader = good_header;
-		replaceheader.complement = HeaderComplement(&replaceheader);
+		header = good_header;
+		header.complement = HeaderComplement(&header);
 		
-		fwrite(&replaceheader, sizeof(replaceheader), 1, fout);
+		fwrite(&header, sizeof(header), 1, fout);
+
+		fseek(fin,sizeof(header),SEEK_SET);
 
 		msg="Header ROM Replaced by good one!";
-
-		fseek(fin,sizeof(replaceheader),SEEK_CUR);
 
 	}
 	else if(isadd)
@@ -343,12 +382,49 @@ int main(int argc, const char *argv[])
 
 		msg="Header ROM Added!";
 	}
+	else if(isremove)
+	{
+		fseek(fin,sizeof(Header),SEEK_SET);
+
+		ispadding=0;
+
+		msg="Header ROM Removed!";
+	}
+	else if(iscopy)
+	{
+		const size_t s= fread(&header, sizeof(header), 1, fin);
+
+		fwrite(&header, sizeof(header), s, fout);
+
+		puts("Header ROM Copied!");
+
+		fclose(fin);
+		fclose(fout);
+
+		return 0;
+	}
+	else if(islink)
+	{	
+		fwrite(&linkheader, sizeof(linkheader), 1, fout);
+
+		puts("Header ROM Concat!");
+
+		fclose(fin);
+		fclose(fout);
+
+		return 0;
+	}
 	else if(ispadonly)
 	{
-		msg="Padding only activated!"; ispadding=1;
+		ispadding=1;
+
+		msg="Padding only activated!";
 	}
 	else
 	{
+		const size_t s = fread(&header, sizeof(header), 1, fin);
+		rewind(fin);
+
 		memcpy(header.logo, good_header.logo, sizeof(header.logo));
 		memcpy(&header.fixed, &good_header.fixed, sizeof(header.fixed));
 		header.device_type=good_header.device_type;
@@ -371,11 +447,9 @@ int main(int argc, const char *argv[])
 		header.checksum = 0;
 		header.complement = HeaderComplement(&header);
 
-		fwrite(&header, sizeof(header), 1, fout);
+		fwrite(&header, sizeof(header), s, fout);
 
 		msg="Header ROM fixed!";
-
-		fseek(fin,sizeof(header),SEEK_CUR);
 	}
 
 	{

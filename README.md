@@ -9,6 +9,7 @@
 3. Support replace good header
 4. Written in ansi c
 5. Approve original code
+6. Remove , Copy, Concat
 
 ### Command
 
@@ -18,8 +19,15 @@ gbafix2 is a ROM GameBoy Advance Head Builder & Fixer
 
 USAGE:: gbafix2 [option] infile
 
+gbafix2 is a ROM GameBoy Advance Head Builder & Fixer
+
+USAGE:: gbafix2 [option] infile
+
 -g	 => Replaced by good header
 -a	 => Add header to an output file
+-R	 => Remove header
+-C	 => Copy header
+-l:	 => concat header and file
 -p	 => Pad to next exact power of 2. No minimum size
 -P	 => Pad only and exit
 -t:	 => Patch title. Fill zero if none given
