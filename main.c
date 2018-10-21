@@ -413,9 +413,7 @@ int main(int argc, const char *argv[])
 	}
 	else if(iscopy)
 	{
-		const size_t s= fread(&header, sizeof(header), 1, fin);
-
-		if(s<1)
+		if(fread(&header, sizeof(header), 1, fin)<1)
 		{
 			if(fin) fclose(fin);
 			if(fout) fclose(fout);
@@ -424,7 +422,7 @@ int main(int argc, const char *argv[])
 
 		}
 
-		fwrite(&header, sizeof(header), s, fout);
+		fwrite(&header, sizeof(header), 1, fout);
 
 		puts("Header ROM Copied!");
 
@@ -452,9 +450,7 @@ int main(int argc, const char *argv[])
 	}
 	else
 	{
-		const size_t s = fread(&header, sizeof(header), 1, fin);
-
-		if(s<1)
+		if(fread(&header, sizeof(header), 1, fin)<1)
 		{
 			if(fin) fclose(fin);
 			if(fout) fclose(fout);
@@ -487,7 +483,7 @@ int main(int argc, const char *argv[])
 		header.checksum = 0;
 		header.complement = HeaderComplement(&header);
 
-		fwrite(&header, sizeof(header), s, fout);
+		fwrite(&header, sizeof(header), 1, fout);
 
 		msg="Header ROM fixed!";
 	}
