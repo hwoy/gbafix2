@@ -118,10 +118,10 @@ static const char* optstr[] = {
 "Replaced by good header (No patch)",\
 "Add a header to an output file",\
 "Remove header (No patch, No Padding)",\
-"Copy header (Not Paddable)",\
+"Copy header (No Padding)",\
 "Concat header and file",\
 "Pad to next exact power of 2. No minimum size",\
-"Pad only and exit",\
+"Pad only and exit (No patch)",\
 "Patch title. Fill zero if none given",\
 "Patch game code (four characters)",\
 "Patch maker code (two characters)",\
