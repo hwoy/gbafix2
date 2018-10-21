@@ -26,8 +26,8 @@ USAGE:: gbafix2 [option] infile
 -g	 => Replaced by good header
 -a	 => Add header to an output file
 -R	 => Remove header
--C	 => Copy header
--l:	 => concat header and file
+-C	 => Copy header (NO Patch)
+-l:	 => Concat header and file (NO Patch)
 -p	 => Pad to next exact power of 2. No minimum size
 -P	 => Pad only and exit
 -t:	 => Patch title. Fill zero if none given
