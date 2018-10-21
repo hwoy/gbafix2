@@ -114,8 +114,8 @@ static const char* optstr[] = {
 "Replaced by good header",\
 "Add header to an output file",\
 "Remove header",\
-"Copy header",\
-"concat header and file",\
+"Copy header (NO Patch)",\
+"Concat header and file (NO Patch)",\
 "Pad to next exact power of 2. No minimum size",\
 "Pad only and exit",\
 "Patch title. Fill zero if none given",\
