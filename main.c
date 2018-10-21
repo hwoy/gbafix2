@@ -68,7 +68,8 @@ enum Error{
 	err_dfin,
 	err_debug,
 	err_hfile,
-	err_fread
+	err_fread,
+	err_oneoper
 };
 
 static const char *errstr[]={
@@ -82,6 +83,7 @@ static const char *errstr[]={
 "Debug entry point",\
 "can not access header file",\
 "Less byte length of file",\
+"Only one \"-g\",\"-a\",\"-R\",\"-C\",\"-l:\",\"-P\" ",\
 NULL};
 
 
@@ -373,6 +375,14 @@ int main(int argc, const char *argv[])
 		return printerr(err_fout,errstr); 
 	}
 
+	if(isgood+isadd+isremove+iscopy+islink+ispadonly>1)
+	{
+		if(fin) fclose(fin);
+		if(fout) fclose(fout);
+
+		return printerr(err_oneoper,errstr);
+	}
+
 	if(isgood)
 	{
 		header = good_header;
@@ -443,7 +453,7 @@ int main(int argc, const char *argv[])
 	else
 	{
 		const size_t s = fread(&header, sizeof(header), 1, fin);
-		
+
 		if(s<1)
 		{
 			if(fin) fclose(fin);
